@@ -1,0 +1,261 @@
+.settings-layout {
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg-primary);
+}
+
+.settings-page {
+  flex: 1;
+  padding: 1.5rem 2rem;
+  overflow-y: auto;
+}
+
+.settings-header {
+  margin-bottom: 1.5rem;
+}
+
+.settings-content {
+  max-width: 900px;
+}
+
+.page-title {
+  margin-bottom: 2rem;
+}
+
+.page-title h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.page-title p {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.settings-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.card-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-icon.pink {
+  background: rgba(232, 93, 106, 0.15);
+  color: var(--accent);
+}
+
+.card-title h2 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.btn-add {
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.price-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.price-field label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.price-field.full {
+  grid-column: 1 / -1;
+  max-width: 50%;
+}
+
+.price-input {
+  display: flex;
+  align-items: center;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.price-input input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 0.65rem 0.75rem;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.price-input span {
+  padding: 0 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  border-right: 1px solid var(--border);
+}
+
+.rooms-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.room-setting-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.room-setting-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-weight: 600;
+}
+
+.vip-badge {
+  background: var(--accent);
+  color: #1a1a1a;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+}
+
+.room-setting-card select {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.vip-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.vip-price-field {
+  margin-top: 0.75rem;
+}
+
+.vip-price-field > label {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+}
+
+.products-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.products-table th {
+  text-align: right;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.products-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  color: var(--text-primary);
+  width: 100%;
+  font-size: 0.85rem;
+}
+
+.table-input.price {
+  width: 80px;
+}
+
+.btn-delete {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.25rem;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.btn-save {
+  background: var(--accent);
+  color: #1a1a1a;
+  font-weight: 700;
+  padding: 0.75rem 2rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border-light);
+  color: var(--text-primary);
+  padding: 0.75rem 2rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    flex-direction: column;
+  }
+
+  .rooms-list {
+    grid-template-columns: 1fr;
+  }
+
+  .price-field.full {
+    max-width: 100%;
+  }
+}

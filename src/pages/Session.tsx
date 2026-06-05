@@ -1,0 +1,267 @@
+import { useEffect, useState } from 'react';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import {
+  subscribeSession,
+  subscribeProducts,
+  addItemToSession,
+  removeItemFromSession,
+  endSessionAndPay,
+} from '../services/firestore';
+import type { Session, Product } from '../types';
+import { formatCurrency, formatTimer, formatStartDate, formatHours } from '../utils/format';
+import { calculateTimeCost, calculateAddonsCost } from '../utils/calculations';
+import '../styles/session.css';
+
+export default function SessionPage() {
+  const { roomId } = useParams<{ roomId: string }>();
+  const [searchParams] = useSearchParams();
+  const sessionId = searchParams.get('session') || '';
+  const navigate = useNavigate();
+
+  const [session, setSession] = useState<Session | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [elapsed, setElapsed] = useState(0);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
+  const [ending, setEnding] = useState(false);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    return subscribeSession(sessionId, setSession);
+  }, [sessionId]);
+
+  useEffect(() => {
+    return subscribeProducts(setProducts);
+  }, []);
+
+  useEffect(() => {
+    if (!session) return;
+
+    const update = () => {
+      const diff = Math.floor((Date.now() - session.startTime.getTime()) / 1000);
+      setElapsed(diff);
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [session]);
+
+  if (!session) {
+    return (
+      <div className="session-page">
+        <div className="loading-screen">
+          <div className="loading-spinner" />
+        </div>
+      </div>
+    );
+  }
+
+  const timeCost = calculateTimeCost(elapsed, session.hourlyRate);
+  const addonsCost = calculateAddonsCost(session.items);
+  const total = timeCost + addonsCost;
+  const hours = elapsed / 3600;
+
+  const handleAddProduct = async (product: Product) => {
+    await addItemToSession(sessionId, {
+      productId: product.id,
+      name: product.name,
+      category: product.category,
+      quantity: 1,
+      price: product.sellingPrice,
+    });
+    setShowAddModal(false);
+  };
+
+  const handleRemoveItem = async (productId: string) => {
+    await removeItemFromSession(sessionId, productId);
+  };
+
+  const handleEndSession = () => {
+    setShowBillModal(true);
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!roomId) return;
+    setEnding(true);
+    await endSessionAndPay(sessionId, roomId);
+    navigate('/rooms');
+  };
+
+  const consoleLabel =
+    session.consoleType === 'PS5' ? 'بلايستيشن 5' : 'بلايستيشن 4';
+
+  return (
+    <div className="session-page">
+      <header className="session-top-bar">
+        <span className="brand">بلايستيشن لاونج</span>
+        <span className="brand">بلايستيشن لاونج</span>
+      </header>
+
+      <div className="session-header">
+        <span className="start-date">تاريخ البدء: {formatStartDate(session.startTime)}</span>
+        <div className="session-info">
+          <h1>{session.roomName}</h1>
+          <p>
+            <span className="active-dot" />
+            جلسة نشطة • {consoleLabel}
+          </p>
+        </div>
+      </div>
+
+      <div className="timer-section">
+        <div className="timer-card">
+          <p className="timer-label">الوقت المنقضي</p>
+          <div className="timer-display">{formatTimer(elapsed)}</div>
+          <div className="cost-boxes">
+            <div className="cost-box">
+              <span>تكلفة الوقت</span>
+              <strong>{formatCurrency(timeCost)}</strong>
+            </div>
+            <div className="cost-box">
+              <span>تكلفة الإضافات</span>
+              <strong>{formatCurrency(addonsCost)}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="session-bottom">
+        <div className="account-summary">
+          <h3>ملخص الحساب</h3>
+          <div className="summary-row">
+            <span>سعر الساعة {session.isVIP ? '(VIP)' : ''}</span>
+            <span>{formatCurrency(session.hourlyRate)}</span>
+          </div>
+          <div className="summary-row">
+            <span>الوقت ({formatHours(hours)} ساعة)</span>
+            <span>{formatCurrency(timeCost)}</span>
+          </div>
+          <div className="summary-row">
+            <span>الإضافات</span>
+            <span>{formatCurrency(addonsCost)}</span>
+          </div>
+          <div className="summary-row total">
+            <span>الإجمالي</span>
+            <span>{formatCurrency(total)}</span>
+          </div>
+          <button className="btn-end-session" onClick={handleEndSession}>
+            إنهاء الوقت والدفع
+          </button>
+        </div>
+
+        <div className="orders-section">
+          <div className="orders-header">
+            <h3>الطلبات والإضافات</h3>
+            <button className="btn-add-item" onClick={() => setShowAddModal(true)}>
+              + إضافة صنف
+            </button>
+          </div>
+
+          <div className="orders-list">
+            {session.items.map((item) => (
+              <div key={item.productId} className="order-item">
+                <button
+                  className="btn-remove"
+                  onClick={() => handleRemoveItem(item.productId)}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                  </svg>
+                </button>
+                <div className="order-info">
+                  <strong>
+                    {item.name} (x{item.quantity})
+                  </strong>
+                  <span>{item.category}</span>
+                </div>
+                <span className="order-price">{formatCurrency(item.price * item.quantity)}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {showAddModal && (
+        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>إضافة صنف</h3>
+            <div className="product-list">
+              {products.map((product) => (
+                <button
+                  key={product.id}
+                  className="product-item"
+                  onClick={() => handleAddProduct(product)}
+                >
+                  <span>{product.name}</span>
+                  <span>{formatCurrency(product.sellingPrice)}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBillModal && (
+        <div className="modal-overlay" onClick={() => !ending && setShowBillModal(false)}>
+          <div className="bill-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>حساب الغرفة</h3>
+            <p className="bill-room-name">{session.roomName}</p>
+
+            <div className="bill-details">
+              <div className="bill-row">
+                <span>الوقت المنقضي</span>
+                <span>{formatTimer(elapsed)}</span>
+              </div>
+              <div className="bill-row">
+                <span>سعر الساعة {session.isVIP ? '(VIP)' : ''}</span>
+                <span>{formatCurrency(session.hourlyRate)}</span>
+              </div>
+              <div className="bill-row">
+                <span>الوقت ({formatHours(hours)} ساعة)</span>
+                <span>{formatCurrency(timeCost)}</span>
+              </div>
+              <div className="bill-row">
+                <span>الإضافات</span>
+                <span>{formatCurrency(addonsCost)}</span>
+              </div>
+              {session.items.length > 0 && (
+                <div className="bill-items">
+                  {session.items.map((item) => (
+                    <div key={item.productId} className="bill-item">
+                      <span>
+                        {item.name} (x{item.quantity})
+                      </span>
+                      <span>{formatCurrency(item.price * item.quantity)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="bill-row total">
+                <span>الإجمالي</span>
+                <span>{formatCurrency(total)}</span>
+              </div>
+            </div>
+
+            <div className="bill-actions">
+              <button
+                className="btn-confirm-pay"
+                onClick={handleConfirmPayment}
+                disabled={ending}
+              >
+                {ending ? 'جاري التأكيد...' : 'تأكيد الدفع'}
+              </button>
+              <button
+                className="btn-cancel-bill"
+                onClick={() => setShowBillModal(false)}
+                disabled={ending}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
