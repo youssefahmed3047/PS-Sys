@@ -66,6 +66,7 @@ export interface DailyStat {
   afterCostsNet: number;
   totalDiscounts: number;
   netAfterDiscounts: number;
+  expensesTotal?: number;
 }
 
 export interface MonthlyStat {
@@ -75,6 +76,7 @@ export interface MonthlyStat {
   afterCostsNet: number;
   totalDiscounts: number;
   netAfterDiscounts: number;
+  monthlyExpenses?: number;
   growthRate: string;
 }
 

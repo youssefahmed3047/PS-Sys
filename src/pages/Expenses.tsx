@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
-import { subscribeExpenses, addExpense, deleteExpense } from '../services/firestore';
-import type { Expense } from '../types';
+import { subscribeExpenses, subscribeMonthlyStats, addExpense, deleteExpense } from '../services/firestore';
+import type { Expense, MonthlyStat } from '../types';
 import { formatCurrency } from '../utils/format';
 import '../styles/profits.css';
 
@@ -9,11 +9,17 @@ export default function Expenses() {
   const [title, setTitle] = useState('');
   const [amount, setAmount] = useState('');
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [monthlyStat, setMonthlyStat] = useState<MonthlyStat | null>(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    return subscribeExpenses(setExpenses);
+    const unsubExpenses = subscribeExpenses(setExpenses);
+    const unsubMonthly = subscribeMonthlyStats(setMonthlyStat);
+    return () => {
+      unsubExpenses();
+      unsubMonthly();
+    };
   }, []);
 
   const today = new Date().toISOString().split('T')[0];
@@ -23,9 +29,11 @@ export default function Expenses() {
     .filter((expense) => expense.date === today)
     .reduce((sum, expense) => sum + expense.amount, 0);
 
-  const monthExpenses = expenses
-    .filter((expense) => expense.date.startsWith(currentMonth))
+  const monthExpensesFromExpenses = expenses
+    .filter((expense) => expense.date.startsWith(currentMonth) && expense.date !== today)
     .reduce((sum, expense) => sum + expense.amount, 0);
+
+  const monthExpenses = monthlyStat?.monthlyExpenses ?? monthExpensesFromExpenses;
 
   const handleAddExpense = async () => {
     setError('');

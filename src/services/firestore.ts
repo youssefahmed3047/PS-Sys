@@ -284,6 +284,42 @@ export async function startNewDay() {
 
   const current = currentDayDoc.data() as CurrentDay;
   const today = new Date().toISOString().split('T')[0];
+  const currentMonthYear = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+
+  const expensesSnapshot = await getDocs(
+    query(collection(db, 'Expenses'), where('date', '==', today))
+  );
+  let todayExpensesTotal = 0;
+  expensesSnapshot.docs.forEach((expenseDoc) => {
+    const data = expenseDoc.data() as Expense;
+    todayExpensesTotal += data.amount || 0;
+  });
+
+  const currentMonthStatsSnapshot = await getDocs(
+    query(collection(db, 'MonthlyStats'), where('monthYear', '==', currentMonthYear))
+  );
+
+  if (currentMonthStatsSnapshot.empty) {
+    await addDoc(collection(db, 'MonthlyStats'), {
+      monthYear: currentMonthYear,
+      beforeCosts: current.beforeCosts,
+      afterCostsNet: current.afterCostsNet,
+      totalDiscounts: current.totalDiscounts,
+      netAfterDiscounts: current.netAfterDiscounts,
+      monthlyExpenses: todayExpensesTotal,
+      growthRate: '+0% نمو',
+    });
+  } else {
+    const monthDoc = currentMonthStatsSnapshot.docs[0];
+    const monthData = monthDoc.data();
+    await updateDoc(monthDoc.ref, {
+      beforeCosts: (monthData.beforeCosts || 0) + current.beforeCosts,
+      afterCostsNet: (monthData.afterCostsNet || 0) + current.afterCostsNet,
+      totalDiscounts: (monthData.totalDiscounts || 0) + current.totalDiscounts,
+      netAfterDiscounts: (monthData.netAfterDiscounts || 0) + current.netAfterDiscounts,
+      monthlyExpenses: (monthData.monthlyExpenses || 0) + todayExpensesTotal,
+    });
+  }
 
   await addDoc(collection(db, 'DailyStats'), {
     date: today,
@@ -291,11 +327,9 @@ export async function startNewDay() {
     afterCostsNet: current.afterCostsNet,
     totalDiscounts: current.totalDiscounts,
     netAfterDiscounts: current.netAfterDiscounts,
+    expensesTotal: todayExpensesTotal,
   });
 
-  const expensesSnapshot = await getDocs(
-    query(collection(db, 'Expenses'), where('date', '==', today))
-  );
   for (const expenseDoc of expensesSnapshot.docs) {
     await deleteDoc(expenseDoc.ref);
   }
@@ -354,6 +388,12 @@ export async function startNewMonth() {
     }
   }
 
+  const currentMonthStats = await getDocs(
+    query(collection(db, 'MonthlyStats'), where('monthYear', '==', currentMonthYear))
+  );
+  const currentMonthExpenses = currentMonthStats.empty
+    ? 0
+    : (currentMonthStats.docs[0].data().monthlyExpenses || 0);
   const currentMonthDocs = await getDocs(
     query(collection(db, 'MonthlyStats'), where('monthYear', '==', currentMonthYear))
   );
@@ -372,6 +412,7 @@ export async function startNewMonth() {
     afterCostsNet,
     totalDiscounts,
     netAfterDiscounts,
+    monthlyExpenses: currentMonthExpenses,
     growthRate,
   });
 
@@ -382,6 +423,7 @@ export async function startNewMonth() {
     afterCostsNet: 0,
     totalDiscounts: 0,
     netAfterDiscounts: 0,
+    monthlyExpenses: 0,
     growthRate: '+0% نمو',
   });
 

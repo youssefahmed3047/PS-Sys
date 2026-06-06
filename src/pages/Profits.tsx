@@ -61,9 +61,11 @@ export default function Profits() {
     .filter((expense) => expense.date === today)
     .reduce((sum, expense) => sum + expense.amount, 0);
 
-  const monthExpenses = expenses
-    .filter((expense) => expense.date.startsWith(currentMonth))
+  const monthExpensesFromExpenses = expenses
+    .filter((expense) => expense.date.startsWith(currentMonth) && expense.date !== today)
     .reduce((sum, expense) => sum + expense.amount, 0);
+
+  const monthExpenses = monthlyStat?.monthlyExpenses ?? monthExpensesFromExpenses;
 
   const dayNetAfterExpenses = currentDay.netAfterDiscounts - todayExpenses;
   const monthNetAfterExpenses = (monthlyStat?.netAfterDiscounts ?? 0) - monthExpenses;
@@ -122,20 +124,6 @@ export default function Profits() {
               <div className="metric cyan">
                 <div className="metric-bar" />
                 <div className="metric-content">
-                  <span>إجمالي الخصومات</span>
-                  <strong>{formatNumber(currentDay.totalDiscounts)} ج.م</strong>
-                </div>
-              </div>
-              <div className="metric white">
-                <div className="metric-bar" />
-                <div className="metric-content">
-                  <span>الصافي بعد الخصومات</span>
-                  <strong>{formatNumber(currentDay.netAfterDiscounts)} ج.م</strong>
-                </div>
-              </div>
-              <div className="metric cyan">
-                <div className="metric-bar" />
-                <div className="metric-content">
                   <span>مصاريف اليوم</span>
                   <strong>{formatNumber(todayExpenses)} ج.م</strong>
                 </div>
@@ -151,7 +139,6 @@ export default function Profits() {
 
             <div className="profit-card-footer">
               <span>آخر تحديث: {lastUpdate.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit', hour12: true })}</span>
-              <span className="badge green">معدل مرتفع</span>
             </div>
           </div>
 
@@ -185,20 +172,6 @@ export default function Profits() {
               <div className="metric cyan">
                 <div className="metric-bar" />
                 <div className="metric-content">
-                  <span>إجمالي الخصومات</span>
-                  <strong>{formatNumber(monthlyStat?.totalDiscounts || 0)} ج.م</strong>
-                </div>
-              </div>
-              <div className="metric white">
-                <div className="metric-bar" />
-                <div className="metric-content">
-                  <span>الصافي بعد الخصومات</span>
-                  <strong>{formatNumber(monthlyStat?.netAfterDiscounts || 0)} ج.م</strong>
-                </div>
-              </div>
-              <div className="metric cyan">
-                <div className="metric-bar" />
-                <div className="metric-content">
                   <span>مصاريف الشهر الحالية</span>
                   <strong>{formatNumber(monthExpenses)} ج.م</strong>
                 </div>
@@ -218,7 +191,6 @@ export default function Profits() {
                   ? `شهر ${monthlyStat.monthYear}`
                   : new Date().toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
               </span>
-              <span className="badge yellow">{monthlyStat?.growthRate || '+0% نمو'}</span>
             </div>
           </div>
         </div>
@@ -233,8 +205,7 @@ export default function Profits() {
                 <tr>
                   <th>التاريخ</th>
                   <th>إجمالي الأرباح</th>
-                  <th>إجمالي الخصومات</th>
-                  <th>الصافي بعد الخصومات</th>
+                  <th>مصاريف اليوم</th>
                 </tr>
               </thead>
               <tbody>
@@ -242,8 +213,7 @@ export default function Profits() {
                   <tr key={stat.id}>
                     <td>{stat.date}</td>
                     <td className="yellow">{formatCurrency(stat.beforeCosts)}</td>
-                    <td className="cyan">{formatCurrency(stat.totalDiscounts)}</td>
-                    <td className="white">{formatCurrency(stat.netAfterDiscounts)}</td>
+                    <td className="cyan">{formatCurrency(stat.expensesTotal ?? 0)}</td>
                   </tr>
                 ))}
               </tbody>
