@@ -241,3 +241,11 @@
     gap: 1rem;
   }
 }
+
+.log-empty {
+  color: var(--text-secondary);
+  padding: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}

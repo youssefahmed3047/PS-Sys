@@ -79,7 +79,7 @@ export default function Login() {
           </div>
 
           <a href="#" className="forgot-link" onClick={(e) => e.preventDefault()}>
-            نسيت كلمة المرور؟
+            تواصل مع الإدارة للتعاقد
           </a>
 
           {error && <p className="login-error">{error}</p>}

@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "seed": "node scripts/seed.mjs",
+    "reset": "node scripts/reset.mjs",
     "fix-users": "node scripts/fix-users.mjs",
     "fix-rooms": "node scripts/fix-rooms.mjs",
     "fix-vip-prices": "node scripts/fix-vip-prices.mjs",

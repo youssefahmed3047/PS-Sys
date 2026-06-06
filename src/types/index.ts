@@ -23,6 +23,14 @@ export interface SessionItem {
   price: number;
 }
 
+export interface Expense {
+  id: string;
+  title: string;
+  amount: number;
+  date: string;
+  createdAt: Date;
+}
+
 export interface Session {
   id: string;
   roomId: string;

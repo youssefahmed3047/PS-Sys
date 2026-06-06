@@ -6,6 +6,7 @@ import Rooms from './pages/Rooms';
 import Session from './pages/Session';
 import Settings from './pages/Settings';
 import Profits from './pages/Profits';
+import Expenses from './pages/Expenses';
 
 function App() {
   return (
@@ -42,6 +43,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Profits />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/expenses"
+            element={
+              <ProtectedRoute>
+                <Expenses />
               </ProtectedRoute>
             }
           />

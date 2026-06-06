@@ -8,10 +8,12 @@ import {
   deleteDoc,
   onSnapshot,
   query,
+  where,
   orderBy,
   Timestamp,
   setDoc,
   writeBatch,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import type {
@@ -20,6 +22,7 @@ import type {
   SessionItem,
   Settings,
   Product,
+  Expense,
   DailyStat,
   MonthlyStat,
   CurrentDay,
@@ -131,6 +134,29 @@ export function subscribeDailyStats(callback: (stats: DailyStat[]) => void) {
   });
 }
 
+export function subscribeExpenses(callback: (expenses: Expense[]) => void) {
+  const q = query(collection(db, 'Expenses'), orderBy('date', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    const expenses = snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+      createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date(),
+    })) as Expense[];
+    callback(expenses);
+  });
+}
+
+export async function addExpense(expense: Omit<Expense, 'id' | 'createdAt'>) {
+  await addDoc(collection(db, 'Expenses'), {
+    ...expense,
+    createdAt: Timestamp.now(),
+  });
+}
+
+export async function deleteExpense(expenseId: string) {
+  await deleteDoc(doc(db, 'Expenses', expenseId));
+}
+
 export async function startSession(
   room: Room,
   playMode: 'single' | 'multi',
@@ -229,7 +255,11 @@ export async function addRoom(room: Omit<Room, 'id'>) {
 }
 
 export async function updateRoom(roomId: string, data: Partial<Room>) {
-  await updateDoc(doc(db, 'Rooms', roomId), data);
+  const updateData: Partial<Room> = { ...data };
+  if (updateData.isVIP === false && updateData.vipPrice === undefined) {
+    (updateData as any).vipPrice = deleteField();
+  }
+  await updateDoc(doc(db, 'Rooms', roomId), updateData);
 }
 
 export async function deleteRoom(roomId: string) {
@@ -263,6 +293,13 @@ export async function startNewDay() {
     netAfterDiscounts: current.netAfterDiscounts,
   });
 
+  const expensesSnapshot = await getDocs(
+    query(collection(db, 'Expenses'), where('date', '==', today))
+  );
+  for (const expenseDoc of expensesSnapshot.docs) {
+    await deleteDoc(expenseDoc.ref);
+  }
+
   await setDoc(doc(db, 'CurrentDay', 'today'), {
     beforeCosts: 0,
     afterCostsNet: 0,
@@ -278,7 +315,9 @@ export async function startNewMonth() {
   );
 
   const now = new Date();
-  const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const currentMonthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const previousMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const closedMonthYear = `${previousMonthDate.getFullYear()}-${String(previousMonthDate.getMonth() + 1).padStart(2, '0')}`;
 
   let beforeCosts = 0;
   let afterCostsNet = 0;
@@ -315,8 +354,20 @@ export async function startNewMonth() {
     }
   }
 
-  await addDoc(collection(db, 'MonthlyStats'), {
-    monthYear,
+  const currentMonthDocs = await getDocs(
+    query(collection(db, 'MonthlyStats'), where('monthYear', '==', currentMonthYear))
+  );
+  const closedMonthDocs = await getDocs(
+    query(collection(db, 'MonthlyStats'), where('monthYear', '==', closedMonthYear))
+  );
+
+  const batch = writeBatch(db);
+  currentMonthDocs.docs.forEach((d) => batch.delete(d.ref));
+  closedMonthDocs.docs.forEach((d) => batch.delete(d.ref));
+
+  const closedMonthRef = doc(collection(db, 'MonthlyStats'));
+  batch.set(closedMonthRef, {
+    monthYear: closedMonthYear,
     beforeCosts,
     afterCostsNet,
     totalDiscounts,
@@ -324,7 +375,16 @@ export async function startNewMonth() {
     growthRate,
   });
 
-  const batch = writeBatch(db);
+  const currentMonthRef = doc(collection(db, 'MonthlyStats'));
+  batch.set(currentMonthRef, {
+    monthYear: currentMonthYear,
+    beforeCosts: 0,
+    afterCostsNet: 0,
+    totalDiscounts: 0,
+    netAfterDiscounts: 0,
+    growthRate: '+0% نمو',
+  });
+
   dailyStats.docs.forEach((d) => batch.delete(d.ref));
   batch.set(doc(db, 'CurrentDay', 'today'), {
     beforeCosts: 0,

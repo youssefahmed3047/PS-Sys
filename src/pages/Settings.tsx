@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import {
   subscribeSettings,
@@ -7,6 +8,7 @@ import {
   saveSettings,
   addRoom,
   updateRoom,
+  deleteRoom,
   addProduct,
   updateProduct,
   deleteProduct,
@@ -25,6 +27,9 @@ export default function Settings() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [originalSettings, setOriginalSettings] = useState<SettingsType | null>(null);
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsub1 = subscribeSettings((s) => {
@@ -41,8 +46,18 @@ export default function Settings() {
   }, []);
 
   const handleSave = async () => {
-    await saveSettings(settings);
-    setOriginalSettings(settings);
+    setSaveError('');
+    setSaving(true);
+    try {
+      await saveSettings(settings);
+      setOriginalSettings(settings);
+      navigate('/rooms');
+    } catch (error) {
+      setSaveError('فشل حفظ الإعدادات. حاول مرة أخرى.');
+      console.error('Save settings error:', error);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -104,6 +119,11 @@ export default function Settings() {
                   <input
                     type="number"
                     value={settings.ps5Single}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
                     onChange={(e) =>
                       setSettings({ ...settings, ps5Single: Number(e.target.value) })
                     }
@@ -117,6 +137,11 @@ export default function Settings() {
                   <input
                     type="number"
                     value={settings.ps5Multi}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
                     onChange={(e) =>
                       setSettings({ ...settings, ps5Multi: Number(e.target.value) })
                     }
@@ -130,6 +155,11 @@ export default function Settings() {
                   <input
                     type="number"
                     value={settings.ps4Single}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
                     onChange={(e) =>
                       setSettings({ ...settings, ps4Single: Number(e.target.value) })
                     }
@@ -143,6 +173,11 @@ export default function Settings() {
                   <input
                     type="number"
                     value={settings.ps4Multi}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
                     onChange={(e) =>
                       setSettings({ ...settings, ps4Multi: Number(e.target.value) })
                     }
@@ -227,6 +262,15 @@ export default function Settings() {
                       </div>
                     </div>
                   )}
+                  {room.status === 'available' && (
+                    <button
+                      type="button"
+                      className="btn-delete"
+                      onClick={() => deleteRoom(room.id)}
+                    >
+                      حذف الغرفة
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
@@ -291,11 +335,12 @@ export default function Settings() {
             </table>
           </div>
 
+          {saveError && <div className="settings-error">{saveError}</div>}
           <div className="settings-actions">
-            <button className="btn-save" onClick={handleSave}>
-              حفظ الإعدادات
+            <button className="btn-save" onClick={handleSave} disabled={saving}>
+              {saving ? 'جاري الحفظ...' : 'حفظ الإعدادات'}
             </button>
-            <button className="btn-cancel" onClick={handleCancel}>
+            <button className="btn-cancel" onClick={handleCancel} disabled={saving}>
               إلغاء التغييرات
             </button>
           </div>

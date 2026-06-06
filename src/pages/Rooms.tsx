@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import TopNav from '../components/TopNav';
-import { subscribeRooms, startSession, stopSession, getSettings } from '../services/firestore';
+import { subscribeRooms, startSession, getSettings } from '../services/firestore';
 import type { Room } from '../types';
 import '../styles/rooms.css';
 
@@ -25,12 +25,6 @@ export default function Rooms() {
   const handleDetails = (room: Room) => {
     if (room.status === 'busy' && room.activeSessionId) {
       navigate(`/session/${room.id}?session=${room.activeSessionId}`);
-    }
-  };
-
-  const handleStop = async (room: Room) => {
-    if (room.activeSessionId) {
-      await stopSession(room.id, room.activeSessionId);
     }
   };
 
@@ -82,9 +76,6 @@ export default function Rooms() {
                 <>
                   <button className="btn-details-outline" onClick={() => handleDetails(room)}>
                     التفاصيل
-                  </button>
-                  <button className="btn-stop" onClick={() => handleStop(room)}>
-                    إيقاف
                   </button>
                 </>
               ) : (
