@@ -41,6 +41,8 @@ export interface Session {
   hourlyRate: number;
   isVIP: boolean;
   items: SessionItem[];
+  gameCount: number;
+  gamePrice: number;
   status: 'active' | 'ended';
 }
 
@@ -49,6 +51,8 @@ export interface Settings {
   ps5Multi: number;
   ps4Single: number;
   ps4Multi: number;
+  ps5Game: number;
+  ps4Game: number;
   totalRooms: number;
 }
 

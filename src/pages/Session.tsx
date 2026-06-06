@@ -6,6 +6,7 @@ import {
   addItemToSession,
   removeItemFromSession,
   endSessionAndPay,
+  incrementSessionGameCount,
 } from '../services/firestore';
 import type { Session, Product } from '../types';
 import { formatCurrency, formatTimer, formatStartDate, formatHours } from '../utils/format';
@@ -59,7 +60,8 @@ export default function SessionPage() {
 
   const timeCost = calculateTimeCost(elapsed, session.hourlyRate);
   const addonsCost = calculateAddonsCost(session.items);
-  const total = timeCost + addonsCost;
+  const gameCost = (session.gameCount || 0) * (session.gamePrice || 0);
+  const total = timeCost + addonsCost + gameCost;
   const hours = elapsed / 3600;
 
   const handleAddProduct = async (product: Product) => {
@@ -75,6 +77,10 @@ export default function SessionPage() {
 
   const handleRemoveItem = async (productId: string) => {
     await removeItemFromSession(sessionId, productId);
+  };
+
+  const handleIncrementGameCount = async () => {
+    await incrementSessionGameCount(sessionId);
   };
 
   const handleEndSession = () => {
@@ -99,13 +105,19 @@ export default function SessionPage() {
       </header>
 
       <div className="session-header">
-        <span className="start-date">تاريخ البدء: {formatStartDate(session.startTime)}</span>
+        <div className="session-top-row">
+          <span className="start-date">تاريخ البدء: {formatStartDate(session.startTime)}</span>
+          <button className="btn-add-item" onClick={handleIncrementGameCount}>
+            لعب جيم
+          </button>
+        </div>
         <div className="session-info">
           <h1>{session.roomName}</h1>
           <p>
             <span className="active-dot" />
             جلسة نشطة • {consoleLabel}
           </p>
+          <p className="game-count">عدد الجيمات: {session.gameCount ?? 0}</p>
         </div>
       </div>
 
@@ -140,6 +152,10 @@ export default function SessionPage() {
           <div className="summary-row">
             <span>الإضافات</span>
             <span>{formatCurrency(addonsCost)}</span>
+          </div>
+          <div className="summary-row">
+            <span>تكلفة الجيمات</span>
+            <span>{formatCurrency(gameCost)}</span>
           </div>
           <div className="summary-row total">
             <span>الإجمالي</span>
@@ -224,6 +240,14 @@ export default function SessionPage() {
               <div className="bill-row">
                 <span>الإضافات</span>
                 <span>{formatCurrency(addonsCost)}</span>
+              </div>
+              <div className="bill-row">
+                <span>عدد الجيمات</span>
+                <span>{session.gameCount}</span>
+              </div>
+              <div className="bill-row">
+                <span>تكلفة الجيمات</span>
+                <span>{formatCurrency(gameCost)}</span>
               </div>
               {session.items.length > 0 && (
                 <div className="bill-items">

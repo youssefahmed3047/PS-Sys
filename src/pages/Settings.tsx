@@ -22,6 +22,8 @@ export default function Settings() {
     ps5Multi: 70,
     ps4Single: 30,
     ps4Multi: 45,
+    ps5Game: 20,
+    ps4Game: 10,
     totalRooms: 12,
   });
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -150,6 +152,24 @@ export default function Settings() {
                 </div>
               </div>
               <div className="price-field">
+                <label>سعر جيم PS5</label>
+                <div className="price-input">
+                  <input
+                    type="number"
+                    value={settings.ps5Game}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    onChange={(e) =>
+                      setSettings({ ...settings, ps5Game: Number(e.target.value) })
+                    }
+                  />
+                  <span>ج.م</span>
+                </div>
+              </div>
+              <div className="price-field">
                 <label>PS4 Single (ساعة)</label>
                 <div className="price-input">
                   <input
@@ -162,6 +182,24 @@ export default function Settings() {
                     }}
                     onChange={(e) =>
                       setSettings({ ...settings, ps4Single: Number(e.target.value) })
+                    }
+                  />
+                  <span>ج.م</span>
+                </div>
+              </div>
+              <div className="price-field">
+                <label>سعر جيم PS4</label>
+                <div className="price-input">
+                  <input
+                    type="number"
+                    value={settings.ps4Game}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    onChange={(e) =>
+                      setSettings({ ...settings, ps4Game: Number(e.target.value) })
                     }
                   />
                   <span>ج.م</span>

@@ -14,6 +14,7 @@ import {
   setDoc,
   writeBatch,
   deleteField,
+  increment,
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import type {
@@ -63,6 +64,8 @@ export async function getSettings(): Promise<Settings> {
       ps5Multi: 70,
       ps4Single: 30,
       ps4Multi: 45,
+      ps5Game: 20,
+      ps4Game: 10,
       totalRooms: 12,
     };
   }
@@ -77,6 +80,8 @@ export function subscribeSettings(callback: (settings: Settings) => void) {
         ps5Multi: 70,
         ps4Single: 30,
         ps4Multi: 45,
+        ps5Game: 20,
+        ps4Game: 10,
         totalRooms: 12,
       });
       return;
@@ -163,6 +168,7 @@ export async function startSession(
   settings: Settings
 ): Promise<string> {
   const hourlyRate = getHourlyRate(room, playMode, settings);
+  const gamePrice = room.consoleType === 'PS5' ? settings.ps5Game : settings.ps4Game;
 
   const sessionRef = await addDoc(collection(db, 'Sessions'), {
     roomId: room.id,
@@ -171,6 +177,8 @@ export async function startSession(
     playMode,
     consoleType: room.consoleType,
     hourlyRate,
+    gameCount: 0,
+    gamePrice,
     isVIP: room.isVIP,
     items: [],
     status: 'active',
@@ -193,7 +201,8 @@ export async function stopSession(roomId: string, sessionId: string) {
   const elapsed = (Date.now() - startTime.getTime()) / 1000;
   const timeCost = calculateTimeCost(elapsed, session.hourlyRate);
   const addonsCost = calculateAddonsCost(session.items || []);
-  const totalBeforeCosts = timeCost + addonsCost;
+  const gameCharge = (session.gameCount || 0) * (session.gamePrice || 0);
+  const totalBeforeCosts = timeCost + addonsCost + gameCharge;
   const totalAfterCosts = totalBeforeCosts;
 
   await updateDoc(doc(db, 'Sessions', sessionId), { status: 'ended' });
@@ -218,6 +227,12 @@ export async function stopSession(roomId: string, sessionId: string) {
 
 export async function endSessionAndPay(sessionId: string, roomId: string) {
   await stopSession(roomId, sessionId);
+}
+
+export async function incrementSessionGameCount(sessionId: string) {
+  await updateDoc(doc(db, 'Sessions', sessionId), {
+    gameCount: increment(1),
+  });
 }
 
 export async function addItemToSession(sessionId: string, item: SessionItem) {
