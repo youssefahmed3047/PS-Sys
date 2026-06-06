@@ -89,7 +89,7 @@
   align-items: center;
   text-align: center;
   box-shadow: 0 0 20px rgba(232, 93, 106, 0.08);
-  min-height: 320px;
+  min-height: 370px;
 }
 
 .room-card-top {
@@ -173,6 +173,15 @@
 
 .btn-play:hover {
   background: rgba(232, 93, 106, 0.1);
+}
+
+.btn-game {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+.btn-game:hover {
+  background: rgba(34, 211, 238, 0.1);
 }
 
 .btn-details-outline {

@@ -7,6 +7,8 @@ import {
   removeItemFromSession,
   endSessionAndPay,
   incrementSessionGameCount,
+  incrementSessionExtraTimeCount,
+  decrementSessionExtraTimeCount,
 } from '../services/firestore';
 import type { Session, Product } from '../types';
 import { formatCurrency, formatTimer, formatStartDate, formatHours } from '../utils/format';
@@ -58,10 +60,11 @@ export default function SessionPage() {
     );
   }
 
-  const timeCost = calculateTimeCost(elapsed, session.hourlyRate);
+  const timeCost = session.billingMode === 'game' ? 0 : calculateTimeCost(elapsed, session.hourlyRate);
   const addonsCost = calculateAddonsCost(session.items);
   const gameCost = (session.gameCount || 0) * (session.gamePrice || 0);
-  const total = timeCost + addonsCost + gameCost;
+  const extraTimeCost = (session.extraTimeCount || 0) * (session.extraTimePrice || 0);
+  const total = timeCost + addonsCost + gameCost + extraTimeCost;
   const hours = elapsed / 3600;
 
   const handleAddProduct = async (product: Product) => {
@@ -81,6 +84,14 @@ export default function SessionPage() {
 
   const handleIncrementGameCount = async () => {
     await incrementSessionGameCount(sessionId);
+  };
+
+  const handleIncrementExtraTime = async () => {
+    await incrementSessionExtraTimeCount(sessionId);
+  };
+
+  const handleDecrementExtraTime = async () => {
+    await decrementSessionExtraTimeCount(sessionId);
   };
 
   const handleEndSession = () => {
@@ -115,7 +126,7 @@ export default function SessionPage() {
           <h1>{session.roomName}</h1>
           <p>
             <span className="active-dot" />
-            جلسة نشطة • {consoleLabel}
+            جلسة نشطة • {session.billingMode === 'game' ? 'محاسبة بالجيم' : 'محاسبة بالوقت'} • {consoleLabel}
           </p>
           <p className="game-count">عدد الجيمات: {session.gameCount ?? 0}</p>
         </div>
@@ -123,12 +134,40 @@ export default function SessionPage() {
 
       <div className="timer-section">
         <div className="timer-card">
-          <p className="timer-label">الوقت المنقضي</p>
-          <div className="timer-display">{formatTimer(elapsed)}</div>
+          {session.billingMode === 'game' ? (
+            <div className="game-mode-counters">
+              <div className="counter-column">
+                <p className="timer-label">عدد الماتشات الملعوبة</p>
+                <div className="timer-display">{session.gameCount ?? 0}</div>
+                <button className="btn-add-match" onClick={handleIncrementGameCount}>
+                  إضافة ماتش آخر
+                </button>
+              </div>
+              <div className="counter-column border-right">
+                <p className="timer-label">الوقت الإضافي</p>
+                <div className="timer-display">{session.extraTimeCount ?? 0}</div>
+                <div className="extra-time-actions">
+                  <button className="btn-add-extra" onClick={handleIncrementExtraTime}>
+                    + إضافة وقت
+                  </button>
+                  {(session.extraTimeCount ?? 0) > 0 && (
+                    <button className="btn-remove-extra" onClick={handleDecrementExtraTime}>
+                      - تقليل
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="timer-label">الوقت المنقضي</p>
+              <div className="timer-display">{formatTimer(elapsed)}</div>
+            </>
+          )}
           <div className="cost-boxes">
             <div className="cost-box">
-              <span>تكلفة الوقت</span>
-              <strong>{formatCurrency(timeCost)}</strong>
+              <span>{session.billingMode === 'game' ? 'تكلفة الجيمات والوقت' : 'تكلفة الوقت'}</span>
+              <strong>{session.billingMode === 'game' ? formatCurrency(gameCost + extraTimeCost) : formatCurrency(timeCost)}</strong>
             </div>
             <div className="cost-box">
               <span>تكلفة الإضافات</span>
@@ -141,14 +180,18 @@ export default function SessionPage() {
       <div className="session-bottom">
         <div className="account-summary">
           <h3>ملخص الحساب</h3>
-          <div className="summary-row">
-            <span>سعر الساعة {session.isVIP ? '(VIP)' : ''}</span>
-            <span>{formatCurrency(session.hourlyRate)}</span>
-          </div>
-          <div className="summary-row">
-            <span>الوقت ({formatHours(hours)} ساعة)</span>
-            <span>{formatCurrency(timeCost)}</span>
-          </div>
+          {session.billingMode !== 'game' && (
+            <>
+              <div className="summary-row">
+                <span>سعر الساعة {session.isVIP ? '(VIP)' : ''}</span>
+                <span>{formatCurrency(session.hourlyRate)}</span>
+              </div>
+              <div className="summary-row">
+                <span>الوقت ({formatHours(hours)} ساعة)</span>
+                <span>{formatCurrency(timeCost)}</span>
+              </div>
+            </>
+          )}
           <div className="summary-row">
             <span>الإضافات</span>
             <span>{formatCurrency(addonsCost)}</span>
@@ -157,12 +200,18 @@ export default function SessionPage() {
             <span>تكلفة الجيمات</span>
             <span>{formatCurrency(gameCost)}</span>
           </div>
+          {session.billingMode === 'game' && (session.extraTimeCount ?? 0) > 0 && (
+            <div className="summary-row">
+              <span>الوقت الإضافي (x{session.extraTimeCount})</span>
+              <span>{formatCurrency(extraTimeCost)}</span>
+            </div>
+          )}
           <div className="summary-row total">
             <span>الإجمالي</span>
             <span>{formatCurrency(total)}</span>
           </div>
           <button className="btn-end-session" onClick={handleEndSession}>
-            إنهاء الوقت والدفع
+            {session.billingMode === 'game' ? 'إنهاء الجلسة والدفع' : 'إنهاء الوقت والدفع'}
           </button>
         </div>
 
@@ -229,14 +278,18 @@ export default function SessionPage() {
                 <span>الوقت المنقضي</span>
                 <span>{formatTimer(elapsed)}</span>
               </div>
-              <div className="bill-row">
-                <span>سعر الساعة {session.isVIP ? '(VIP)' : ''}</span>
-                <span>{formatCurrency(session.hourlyRate)}</span>
-              </div>
-              <div className="bill-row">
-                <span>الوقت ({formatHours(hours)} ساعة)</span>
-                <span>{formatCurrency(timeCost)}</span>
-              </div>
+              {session.billingMode !== 'game' && (
+                <>
+                  <div className="bill-row">
+                    <span>سعر الساعة {session.isVIP ? '(VIP)' : ''}</span>
+                    <span>{formatCurrency(session.hourlyRate)}</span>
+                  </div>
+                  <div className="bill-row">
+                    <span>الوقت ({formatHours(hours)} ساعة)</span>
+                    <span>{formatCurrency(timeCost)}</span>
+                  </div>
+                </>
+              )}
               <div className="bill-row">
                 <span>الإضافات</span>
                 <span>{formatCurrency(addonsCost)}</span>
@@ -249,6 +302,12 @@ export default function SessionPage() {
                 <span>تكلفة الجيمات</span>
                 <span>{formatCurrency(gameCost)}</span>
               </div>
+              {session.billingMode === 'game' && (session.extraTimeCount ?? 0) > 0 && (
+                <div className="bill-row">
+                  <span>الوقت الإضافي (x{session.extraTimeCount})</span>
+                  <span>{formatCurrency(extraTimeCost)}</span>
+                </div>
+              )}
               {session.items.length > 0 && (
                 <div className="bill-items">
                   {session.items.map((item) => (

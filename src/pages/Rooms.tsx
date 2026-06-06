@@ -16,10 +16,19 @@ export default function Rooms() {
   const available = rooms.filter((r) => r.status === 'available').length;
   const busy = rooms.filter((r) => r.status === 'busy').length;
 
-  const handleStart = async (room: Room, playMode: 'single' | 'multi') => {
-    const settings = await getSettings();
-    const sessionId = await startSession(room, playMode, settings);
-    navigate(`/session/${room.id}?session=${sessionId}`);
+  const handleStart = async (
+    room: Room,
+    playMode: 'single' | 'multi',
+    billingMode: 'time' | 'game' = 'time'
+  ) => {
+    try {
+      const settings = await getSettings();
+      const sessionId = await startSession(room, playMode, settings, billingMode);
+      navigate(`/session/${room.id}?session=${sessionId}`);
+    } catch (error: any) {
+      console.error('Error starting session:', error);
+      alert('حدث خطأ أثناء بدء الجلسة: ' + (error.message || error));
+    }
   };
 
   const handleDetails = (room: Room) => {
@@ -83,15 +92,29 @@ export default function Rooms() {
                   <div className="play-buttons">
                     <button
                       className="btn-play"
-                      onClick={() => handleStart(room, 'single')}
+                      onClick={() => handleStart(room, 'single', 'time')}
                     >
-                      لعب فردي
+                      بداية وقت فردي
                     </button>
                     <button
                       className="btn-play"
-                      onClick={() => handleStart(room, 'multi')}
+                      onClick={() => handleStart(room, 'multi', 'time')}
                     >
-                      لعب زوجي
+                      بداية وقت زوجي
+                    </button>
+                  </div>
+                  <div className="play-buttons">
+                    <button
+                      className="btn-play btn-game"
+                      onClick={() => handleStart(room, 'single', 'game')}
+                    >
+                      اضافة جيم فردي
+                    </button>
+                    <button
+                      className="btn-play btn-game"
+                      onClick={() => handleStart(room, 'multi', 'game')}
+                    >
+                      اضافة جيم زوجي
                     </button>
                   </div>
                   <button className="btn-details-gray" onClick={() => handleDetails(room)}>

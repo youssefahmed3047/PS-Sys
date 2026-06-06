@@ -24,6 +24,7 @@ export default function Settings() {
     ps4Multi: 45,
     ps5Game: 20,
     ps4Game: 10,
+    extraTimePrice: 15,
     totalRooms: 12,
   });
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -218,6 +219,24 @@ export default function Settings() {
                     }}
                     onChange={(e) =>
                       setSettings({ ...settings, ps4Multi: Number(e.target.value) })
+                    }
+                  />
+                  <span>ج.م</span>
+                </div>
+              </div>
+              <div className="price-field">
+                <label>سعر الوقت الإضافي الثابت</label>
+                <div className="price-input">
+                  <input
+                    type="number"
+                    value={settings.extraTimePrice ?? ''}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    onChange={(e) =>
+                      setSettings({ ...settings, extraTimePrice: Number(e.target.value) })
                     }
                   />
                   <span>ج.م</span>

@@ -43,7 +43,10 @@ export interface Session {
   items: SessionItem[];
   gameCount: number;
   gamePrice: number;
+  extraTimeCount?: number;
+  extraTimePrice?: number;
   status: 'active' | 'ended';
+  billingMode?: 'time' | 'game';
 }
 
 export interface Settings {
@@ -51,8 +54,11 @@ export interface Settings {
   ps5Multi: number;
   ps4Single: number;
   ps4Multi: number;
-  ps5Game: number;
-  ps4Game: number;
+  ps5GameSingle: number;
+  ps5GameMulti: number;
+  ps4GameSingle: number;
+  ps4GameMulti: number;
+  extraTimePrice: number;
   totalRooms: number;
 }
 

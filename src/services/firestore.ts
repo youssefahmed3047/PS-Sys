@@ -58,35 +58,45 @@ export function subscribeSession(sessionId: string, callback: (session: Session 
 
 export async function getSettings(): Promise<Settings> {
   const snapshot = await getDoc(doc(db, 'Settings', 'main'));
+  const defaultSettings: Settings = {
+    ps5Single: 50,
+    ps5Multi: 70,
+    ps4Single: 30,
+    ps4Multi: 45,
+    ps5Game: 20,
+    ps4Game: 10,
+    extraTimePrice: 15,
+    totalRooms: 12,
+  };
   if (!snapshot.exists()) {
-    return {
+    return defaultSettings;
+  }
+  return {
+    ...defaultSettings,
+    ...snapshot.data()
+  } as Settings;
+}
+
+export function subscribeSettings(callback: (settings: Settings) => void) {
+  return onSnapshot(doc(db, 'Settings', 'main'), (snapshot) => {
+    const defaultSettings: Settings = {
       ps5Single: 50,
       ps5Multi: 70,
       ps4Single: 30,
       ps4Multi: 45,
       ps5Game: 20,
       ps4Game: 10,
+      extraTimePrice: 15,
       totalRooms: 12,
     };
-  }
-  return snapshot.data() as Settings;
-}
-
-export function subscribeSettings(callback: (settings: Settings) => void) {
-  return onSnapshot(doc(db, 'Settings', 'main'), (snapshot) => {
     if (!snapshot.exists()) {
-      callback({
-        ps5Single: 50,
-        ps5Multi: 70,
-        ps4Single: 30,
-        ps4Multi: 45,
-        ps5Game: 20,
-        ps4Game: 10,
-        totalRooms: 12,
-      });
+      callback(defaultSettings);
       return;
     }
-    callback(snapshot.data() as Settings);
+    callback({
+      ...defaultSettings,
+      ...snapshot.data()
+    } as Settings);
   });
 }
 
@@ -165,10 +175,13 @@ export async function deleteExpense(expenseId: string) {
 export async function startSession(
   room: Room,
   playMode: 'single' | 'multi',
-  settings: Settings
+  settings: Settings,
+  billingMode: 'time' | 'game' = 'time'
 ): Promise<string> {
   const hourlyRate = getHourlyRate(room, playMode, settings);
-  const gamePrice = room.consoleType === 'PS5' ? settings.ps5Game : settings.ps4Game;
+  const gamePrice = room.consoleType === 'PS5'
+    ? (settings.ps5Game ?? 20)
+    : (settings.ps4Game ?? 10);
 
   const sessionRef = await addDoc(collection(db, 'Sessions'), {
     roomId: room.id,
@@ -177,11 +190,14 @@ export async function startSession(
     playMode,
     consoleType: room.consoleType,
     hourlyRate,
-    gameCount: 0,
+    gameCount: billingMode === 'game' ? 1 : 0,
     gamePrice,
+    extraTimeCount: 0,
+    extraTimePrice: settings.extraTimePrice ?? 15,
     isVIP: room.isVIP,
     items: [],
     status: 'active',
+    billingMode,
   });
 
   await updateDoc(doc(db, 'Rooms', room.id), {
@@ -199,10 +215,11 @@ export async function stopSession(roomId: string, sessionId: string) {
   const session = sessionDoc.data();
   const startTime = session.startTime.toDate();
   const elapsed = (Date.now() - startTime.getTime()) / 1000;
-  const timeCost = calculateTimeCost(elapsed, session.hourlyRate);
+  const timeCost = session.billingMode === 'game' ? 0 : calculateTimeCost(elapsed, session.hourlyRate);
   const addonsCost = calculateAddonsCost(session.items || []);
   const gameCharge = (session.gameCount || 0) * (session.gamePrice || 0);
-  const totalBeforeCosts = timeCost + addonsCost + gameCharge;
+  const extraTimeCharge = (session.extraTimeCount || 0) * (session.extraTimePrice || 0);
+  const totalBeforeCosts = timeCost + addonsCost + gameCharge + extraTimeCharge;
   const totalAfterCosts = totalBeforeCosts;
 
   await updateDoc(doc(db, 'Sessions', sessionId), { status: 'ended' });
@@ -233,6 +250,22 @@ export async function incrementSessionGameCount(sessionId: string) {
   await updateDoc(doc(db, 'Sessions', sessionId), {
     gameCount: increment(1),
   });
+}
+
+export async function incrementSessionExtraTimeCount(sessionId: string) {
+  await updateDoc(doc(db, 'Sessions', sessionId), {
+    extraTimeCount: increment(1),
+  });
+}
+
+export async function decrementSessionExtraTimeCount(sessionId: string) {
+  const docRef = doc(db, 'Sessions', sessionId);
+  const snap = await getDoc(docRef);
+  if (snap.exists() && (snap.data().extraTimeCount || 0) > 0) {
+    await updateDoc(docRef, {
+      extraTimeCount: increment(-1),
+    });
+  }
 }
 
 export async function addItemToSession(sessionId: string, item: SessionItem) {
