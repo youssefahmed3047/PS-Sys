@@ -12,6 +12,8 @@ permissions:
 jobs:
   build-deploy:
     runs-on: ubuntu-latest
+    env:
+      BASE_PATH: "/PS-Sys/"
 
     steps:
       - name: Checkout
@@ -27,6 +29,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          BASE_PATH: ${{ env.BASE_PATH }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
