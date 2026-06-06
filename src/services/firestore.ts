@@ -28,7 +28,7 @@ import type {
   MonthlyStat,
   CurrentDay,
 } from '../types';
-import { getHourlyRate, calculateTimeCost, calculateAddonsCost } from '../utils/calculations';
+import { getHourlyRate, calculateTimeCost, calculateAddonsCost, getGamePrice } from '../utils/calculations';
 
 export function subscribeRooms(callback: (rooms: Room[]) => void) {
   const q = query(collection(db, 'Rooms'), orderBy('order', 'asc'));
@@ -63,8 +63,10 @@ export async function getSettings(): Promise<Settings> {
     ps5Multi: 70,
     ps4Single: 30,
     ps4Multi: 45,
-    ps5Game: 20,
-    ps4Game: 10,
+    ps5GameSingle: 20,
+    ps5GameMulti: 30,
+    ps4GameSingle: 10,
+    ps4GameMulti: 15,
     extraTimePrice: 15,
     totalRooms: 12,
   };
@@ -84,8 +86,10 @@ export function subscribeSettings(callback: (settings: Settings) => void) {
       ps5Multi: 70,
       ps4Single: 30,
       ps4Multi: 45,
-      ps5Game: 20,
-      ps4Game: 10,
+      ps5GameSingle: 20,
+      ps5GameMulti: 30,
+      ps4GameSingle: 10,
+      ps4GameMulti: 15,
       extraTimePrice: 15,
       totalRooms: 12,
     };
@@ -179,9 +183,7 @@ export async function startSession(
   billingMode: 'time' | 'game' = 'time'
 ): Promise<string> {
   const hourlyRate = getHourlyRate(room, playMode, settings);
-  const gamePrice = room.consoleType === 'PS5'
-    ? (settings.ps5Game ?? 20)
-    : (settings.ps4Game ?? 10);
+  const gamePrice = getGamePrice(room, playMode, settings);
 
   const sessionRef = await addDoc(collection(db, 'Sessions'), {
     roomId: room.id,

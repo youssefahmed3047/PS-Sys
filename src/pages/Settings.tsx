@@ -22,8 +22,10 @@ export default function Settings() {
     ps5Multi: 70,
     ps4Single: 30,
     ps4Multi: 45,
-    ps5Game: 20,
-    ps4Game: 10,
+    ps5GameSingle: 20,
+    ps5GameMulti: 30,
+    ps4GameSingle: 10,
+    ps4GameMulti: 15,
     extraTimePrice: 15,
     totalRooms: 12,
   });
@@ -111,7 +113,7 @@ export default function Settings() {
                     <path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z" />
                   </svg>
                 </span>
-                <h2>أسعار الفئات</h2>
+                <h2>أسعار الفئات (الوقت)</h2>
               </div>
             </div>
 
@@ -153,24 +155,6 @@ export default function Settings() {
                 </div>
               </div>
               <div className="price-field">
-                <label>سعر جيم PS5</label>
-                <div className="price-input">
-                  <input
-                    type="number"
-                    value={settings.ps5Game}
-                    onFocus={(e) => {
-                      if (e.currentTarget.value === '0') {
-                        e.currentTarget.value = '';
-                      }
-                    }}
-                    onChange={(e) =>
-                      setSettings({ ...settings, ps5Game: Number(e.target.value) })
-                    }
-                  />
-                  <span>ج.م</span>
-                </div>
-              </div>
-              <div className="price-field">
                 <label>PS4 Single (ساعة)</label>
                 <div className="price-input">
                   <input
@@ -183,24 +167,6 @@ export default function Settings() {
                     }}
                     onChange={(e) =>
                       setSettings({ ...settings, ps4Single: Number(e.target.value) })
-                    }
-                  />
-                  <span>ج.م</span>
-                </div>
-              </div>
-              <div className="price-field">
-                <label>سعر جيم PS4</label>
-                <div className="price-input">
-                  <input
-                    type="number"
-                    value={settings.ps4Game}
-                    onFocus={(e) => {
-                      if (e.currentTarget.value === '0') {
-                        e.currentTarget.value = '';
-                      }
-                    }}
-                    onChange={(e) =>
-                      setSettings({ ...settings, ps4Game: Number(e.target.value) })
                     }
                   />
                   <span>ج.م</span>
@@ -224,6 +190,110 @@ export default function Settings() {
                   <span>ج.م</span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="settings-card">
+            <div className="card-header">
+              <div className="card-title">
+                <span className="card-icon pink">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11z" />
+                  </svg>
+                </span>
+                <h2>أسعار الماتشات (الجيمات)</h2>
+              </div>
+            </div>
+
+            <div className="price-grid">
+              <div className="price-field">
+                <label>سعر جيم PS5 فردي</label>
+                <div className="price-input">
+                  <input
+                    type="number"
+                    value={settings.ps5GameSingle}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    onChange={(e) =>
+                      setSettings({ ...settings, ps5GameSingle: Number(e.target.value) })
+                    }
+                  />
+                  <span>ج.م</span>
+                </div>
+              </div>
+              <div className="price-field">
+                <label>سعر جيم PS5 زوجي</label>
+                <div className="price-input">
+                  <input
+                    type="number"
+                    value={settings.ps5GameMulti}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    onChange={(e) =>
+                      setSettings({ ...settings, ps5GameMulti: Number(e.target.value) })
+                    }
+                  />
+                  <span>ج.م</span>
+                </div>
+              </div>
+              <div className="price-field">
+                <label>سعر جيم PS4 فردي</label>
+                <div className="price-input">
+                  <input
+                    type="number"
+                    value={settings.ps4GameSingle}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    onChange={(e) =>
+                      setSettings({ ...settings, ps4GameSingle: Number(e.target.value) })
+                    }
+                  />
+                  <span>ج.م</span>
+                </div>
+              </div>
+              <div className="price-field">
+                <label>سعر جيم PS4 زوجي</label>
+                <div className="price-input">
+                  <input
+                    type="number"
+                    value={settings.ps4GameMulti}
+                    onFocus={(e) => {
+                      if (e.currentTarget.value === '0') {
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                    onChange={(e) =>
+                      setSettings({ ...settings, ps4GameMulti: Number(e.target.value) })
+                    }
+                  />
+                  <span>ج.م</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="settings-card">
+            <div className="card-header">
+              <div className="card-title">
+                <span className="card-icon pink">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                    <path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2c0-3.32-2.67-7.25-8-11.8z" />
+                  </svg>
+                </span>
+                <h2>أخرى</h2>
+              </div>
+            </div>
+
+            <div className="price-grid">
               <div className="price-field">
                 <label>سعر الوقت الإضافي الثابت</label>
                 <div className="price-input">
@@ -242,7 +312,7 @@ export default function Settings() {
                   <span>ج.م</span>
                 </div>
               </div>
-              <div className="price-field full">
+              <div className="price-field">
                 <label>إجمالي عدد الغرف</label>
                 <div className="price-input">
                   <input
