@@ -19,6 +19,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BASE_PATH: "/PS-Sys/"
+      VITE_FIREBASE_API_KEY: "AIzaSyAIJryfM9Cl4_6bShvOivVPA8DTJ6Cn5Lo"
+      VITE_FIREBASE_AUTH_DOMAIN: "playstation-app-e8511.firebaseapp.com"
+      VITE_FIREBASE_PROJECT_ID: "playstation-app-e8511"
+      VITE_FIREBASE_STORAGE_BUCKET: "playstation-app-e8511.firebasestorage.app"
+      VITE_FIREBASE_MESSAGING_SENDER_ID: "26647784244"
+      VITE_FIREBASE_APP_ID: "1:26647784244:web:7ea13f8682100961b71361"
 
     steps:
       - name: Checkout
