@@ -18,7 +18,6 @@ jobs:
   build-deploy:
     runs-on: ubuntu-latest
     env:
-      BASE_PATH: "/PS-Sys/"
       VITE_FIREBASE_API_KEY: "AIzaSyAIJryfM9Cl4_6bShvOivVPA8DTJ6Cn5Lo"
       VITE_FIREBASE_AUTH_DOMAIN: "playstation-app-e8511.firebaseapp.com"
       VITE_FIREBASE_PROJECT_ID: "playstation-app-e8511"
@@ -41,8 +40,6 @@ jobs:
 
       - name: Build
         run: npm run build
-        env:
-          BASE_PATH: ${{ env.BASE_PATH }}
 
       - name: Add SPA fallback
         run: cp dist/index.html dist/404.html
