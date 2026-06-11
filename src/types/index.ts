@@ -67,6 +67,16 @@ export interface Product {
   name: string;
   sellingPrice: number;
   category: string;
+  quantity: number;
+}
+
+export interface DailyProductSale {
+  id: string;
+  date: string;
+  productId: string;
+  productName: string;
+  quantitySold: number;
+  revenue: number;
 }
 
 export interface DailyStat {

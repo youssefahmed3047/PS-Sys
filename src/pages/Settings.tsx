@@ -87,6 +87,7 @@ export default function Settings() {
       name: 'منتج جديد',
       sellingPrice: 0,
       category: 'عام',
+      quantity: 0,
     });
   };
 
@@ -423,6 +424,7 @@ export default function Settings() {
                 <tr>
                   <th>المنتج</th>
                   <th>سعر البيع</th>
+                  <th>الكمية</th>
                   <th>إجراء</th>
                 </tr>
               </thead>
@@ -443,6 +445,16 @@ export default function Settings() {
                         value={product.sellingPrice}
                         onChange={(e) =>
                           updateProduct(product.id, { sellingPrice: Number(e.target.value) })
+                        }
+                      />
+                    </td>
+                    <td>
+                      <input
+                        className="table-input price"
+                        type="number"
+                        value={product.quantity ?? 0}
+                        onChange={(e) =>
+                          updateProduct(product.id, { quantity: Number(e.target.value) })
                         }
                       />
                     </td>

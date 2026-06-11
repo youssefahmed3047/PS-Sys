@@ -25,6 +25,7 @@ import type {
   Product,
   Expense,
   DailyStat,
+  DailyProductSale,
   MonthlyStat,
   CurrentDay,
 } from '../types';
@@ -106,10 +107,16 @@ export function subscribeSettings(callback: (settings: Settings) => void) {
 
 export function subscribeProducts(callback: (products: Product[]) => void) {
   return onSnapshot(collection(db, 'Products'), (snapshot) => {
-    const products = snapshot.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-    })) as Product[];
+    const products = snapshot.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        name: data.name,
+        sellingPrice: data.sellingPrice,
+        category: data.category,
+        quantity: data.quantity ?? 0,
+      } as Product;
+    });
     callback(products);
   });
 }
@@ -162,6 +169,21 @@ export function subscribeExpenses(callback: (expenses: Expense[]) => void) {
       createdAt: d.data().createdAt?.toDate ? d.data().createdAt.toDate() : new Date(),
     })) as Expense[];
     callback(expenses);
+  });
+}
+
+export function subscribeDailyProductSales(callback: (sales: DailyProductSale[]) => void) {
+  const today = new Date().toISOString().split('T')[0];
+  const q = query(
+    collection(db, 'DailyProductSales'),
+    where('date', '==', today)
+  );
+  return onSnapshot(q, (snapshot) => {
+    const sales = snapshot.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    })) as DailyProductSale[];
+    callback(sales);
   });
 }
 
@@ -230,6 +252,10 @@ export async function stopSession(roomId: string, sessionId: string) {
     activeSessionId: null,
   });
 
+  const today = new Date().toISOString().split('T')[0];
+  const items: SessionItem[] = session.items || [];
+  await Promise.all(items.map((item) => recordDailyProductSales(today, item)));
+
   const currentDayDoc = await getDoc(doc(db, 'CurrentDay', 'today'));
   const current = currentDayDoc.exists()
     ? (currentDayDoc.data() as CurrentDay)
@@ -271,8 +297,15 @@ export async function decrementSessionExtraTimeCount(sessionId: string) {
 }
 
 export async function addItemToSession(sessionId: string, item: SessionItem) {
-  const sessionDoc = await getDoc(doc(db, 'Sessions', sessionId));
-  if (!sessionDoc.exists()) return;
+  const [sessionDoc, productDoc] = await Promise.all([
+    getDoc(doc(db, 'Sessions', sessionId)),
+    getDoc(doc(db, 'Products', item.productId)),
+  ]);
+
+  if (!sessionDoc.exists() || !productDoc.exists()) return;
+  const productData = productDoc.data();
+  const available = productData?.quantity ?? 0;
+  if (available < item.quantity) return;
 
   const items = sessionDoc.data().items || [];
   const existing = items.find((i: SessionItem) => i.productId === item.productId);
@@ -284,16 +317,39 @@ export async function addItemToSession(sessionId: string, item: SessionItem) {
   }
 
   await updateDoc(doc(db, 'Sessions', sessionId), { items });
+  await updateDoc(doc(db, 'Products', item.productId), { quantity: increment(-item.quantity) });
 }
 
 export async function removeItemFromSession(sessionId: string, productId: string) {
   const sessionDoc = await getDoc(doc(db, 'Sessions', sessionId));
   if (!sessionDoc.exists()) return;
 
-  const items = (sessionDoc.data().items || []).filter(
-    (i: SessionItem) => i.productId !== productId
+  const items: SessionItem[] = sessionDoc.data().items || [];
+  const removedItem = items.find((i) => i.productId === productId);
+  const updatedItems = items.filter((i) => i.productId !== productId);
+
+  await updateDoc(doc(db, 'Sessions', sessionId), { items: updatedItems });
+
+  if (removedItem) {
+    await updateDoc(doc(db, 'Products', productId), {
+      quantity: increment(removedItem.quantity),
+    });
+  }
+}
+
+async function recordDailyProductSales(date: string, item: SessionItem) {
+  const docId = `${date}_${item.productId}`;
+  await setDoc(
+    doc(db, 'DailyProductSales', docId),
+    {
+      date,
+      productId: item.productId,
+      productName: item.name,
+      quantitySold: increment(item.quantity),
+      revenue: increment(item.quantity * item.price),
+    },
+    { merge: true }
   );
-  await updateDoc(doc(db, 'Sessions', sessionId), { items });
 }
 
 export async function saveSettings(settings: Settings) {

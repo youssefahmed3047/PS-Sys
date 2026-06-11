@@ -6,10 +6,11 @@ import {
   subscribeMonthlyStats,
   subscribeDailyStats,
   subscribeExpenses,
+  subscribeDailyProductSales,
   startNewDay,
   startNewMonth,
 } from '../services/firestore';
-import type { CurrentDay, MonthlyStat, DailyStat, Expense } from '../types';
+import type { CurrentDay, MonthlyStat, DailyStat, Expense, DailyProductSale } from '../types';
 import { formatCurrency, formatNumber } from '../utils/format';
 import '../styles/profits.css';
 
@@ -23,6 +24,7 @@ export default function Profits() {
   });
   const [monthlyStat, setMonthlyStat] = useState<MonthlyStat | null>(null);
   const [dailyStats, setDailyStats] = useState<DailyStat[]>([]);
+  const [dailyProductSales, setDailyProductSales] = useState<DailyProductSale[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const navigate = useNavigate();
 
@@ -31,11 +33,13 @@ export default function Profits() {
     const unsub2 = subscribeMonthlyStats(setMonthlyStat);
     const unsub3 = subscribeDailyStats(setDailyStats);
     const unsub4 = subscribeExpenses(setExpenses);
+    const unsub5 = subscribeDailyProductSales(setDailyProductSales);
     return () => {
       unsub1();
       unsub2();
       unsub3();
       unsub4();
+      unsub5();
     };
   }, []);
 
@@ -69,6 +73,8 @@ export default function Profits() {
 
   const dayNetAfterExpenses = currentDay.netAfterDiscounts - todayExpenses;
   const monthNetAfterExpenses = (monthlyStat?.netAfterDiscounts ?? 0) - monthExpenses;
+  const totalDrinkRevenue = dailyProductSales.reduce((sum, sale) => sum + sale.revenue, 0);
+  const totalDrinkQuantity = dailyProductSales.reduce((sum, sale) => sum + sale.quantitySold, 0);
 
   return (
     <div className="profits-layout">
@@ -214,6 +220,42 @@ export default function Profits() {
                     <td>{stat.date}</td>
                     <td className="yellow">{formatCurrency(stat.beforeCosts)}</td>
                     <td className="cyan">{formatCurrency(stat.expensesTotal ?? 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <div className="daily-log">
+          <h2>مبيعات المشروبات اليوم</h2>
+          <div className="sales-summary">
+            <div>
+              <strong>{formatNumber(totalDrinkQuantity)}</strong>
+              <p>عدد المشروبات المباعه</p>
+            </div>
+            <div>
+              <strong>{formatCurrency(totalDrinkRevenue)}</strong>
+              <p>إجمالي أرباح المشروبات</p>
+            </div>
+          </div>
+          {dailyProductSales.length === 0 ? (
+            <p className="log-empty">لا توجد مبيعات مشروبات اليوم.</p>
+          ) : (
+            <table className="log-table">
+              <thead>
+                <tr>
+                  <th>المشروب</th>
+                  <th>الكمية</th>
+                  <th>الأرباح</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyProductSales.map((sale) => (
+                  <tr key={sale.id}>
+                    <td>{sale.productName}</td>
+                    <td className="white">{formatNumber(sale.quantitySold)}</td>
+                    <td className="yellow">{formatCurrency(sale.revenue)}</td>
                   </tr>
                 ))}
               </tbody>

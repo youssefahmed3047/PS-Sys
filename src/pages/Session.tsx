@@ -68,6 +68,7 @@ export default function SessionPage() {
   const hours = elapsed / 3600;
 
   const handleAddProduct = async (product: Product) => {
+    if ((product.quantity ?? 0) <= 0) return;
     await addItemToSession(sessionId, {
       productId: product.id,
       name: product.name,
@@ -257,8 +258,12 @@ export default function SessionPage() {
                   key={product.id}
                   className="product-item"
                   onClick={() => handleAddProduct(product)}
+                  disabled={(product.quantity ?? 0) <= 0}
                 >
-                  <span>{product.name}</span>
+                  <span>
+                    {product.name}
+                    <small> - متوفر {product.quantity ?? 0}</small>
+                  </span>
                   <span>{formatCurrency(product.sellingPrice)}</span>
                 </button>
               ))}
